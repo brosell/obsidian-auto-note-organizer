@@ -11,11 +11,11 @@ A plugin for ObsidianMD to automatically organize your notes within a vault. Thi
 
 ## Roadmap
 
-- [ ] Improved rules engine for readability and extensibility.
+- [x] Improved rules engine for readability and extensibility.
 - [ ] Improve settings panel
 - [ ] Add ability to gently enforce/encourage frontmatter. This may just be a 'best practice' document rather than feature.
-- [ ] Add move all notes command. (Inspired by [jeffbeaulieu's PR](https://github.com/farux/obsidian-auto-note-mover/pull/62))
-- [ ] More complex test conditions such as multiple tags. (Inspired by [karl82's PR](https://github.com/farux/obsidian-auto-note-mover/pull/52))
+- [x] Add move all notes command. (Inspired by [jeffbeaulieu's PR](https://github.com/farux/obsidian-auto-note-mover/pull/62))
+- [x] More complex test conditions such as multiple tags. (Inspired by [karl82's PR](https://github.com/farux/obsidian-auto-note-mover/pull/52))
 - [ ] Review [open issues](https://github.com/farux/obsidian-auto-note-mover/issues) in the original project and open issues here for consideration.
 
 We welcome any contributions, suggestions, and feedback!
