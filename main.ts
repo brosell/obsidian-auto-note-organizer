@@ -49,7 +49,7 @@ export default class AutoNoteMover extends Plugin {
 			// transform pattern settings to Rules
 			const rules: Rule[] = folderTagPattern.map( ftp => ({
 				tagMatch: ftp.tag,
-				titleMatchRegex: new RegExp(ftp.pattern),
+				titleMatchRegex: ftp.pattern ? new RegExp(ftp.pattern) : undefined,
 				pathSpec: ftp.folder
 			}));
 			
@@ -64,10 +64,8 @@ export default class AutoNoteMover extends Plugin {
 				frontmatter: fileCache.frontmatter ?? { }
 			}
 
-			console.log('testing', fileName);
 			const movePath = rp.processFileMetadata(fileMetadata);
 			if (movePath) {
-				console.log('movePath', movePath);
 				fileMove(this.app, movePath, fileFullName, file);
 			}
 		};
@@ -86,7 +84,7 @@ export default class AutoNoteMover extends Plugin {
 		}
 
 		this.app.workspace.onLayoutReady(() => {
-			this.registerEvent(this.app.vault.on('create', (file) => { console.log('new note'); fileCheck(file); }));
+			this.registerEvent(this.app.vault.on('create', (file) => { fileCheck(file); }));
 			this.registerEvent(this.app.metadataCache.on('changed', (file) => fileCheck(file)));
 			this.registerEvent(this.app.vault.on('rename', (file, oldPath) => fileCheck(file, oldPath)));
 		});
@@ -97,6 +95,15 @@ export default class AutoNoteMover extends Plugin {
 				return;
 			}
 			fileCheck(view.file, undefined, 'cmd');
+		};
+
+		const moveAllNotesCommand = () => {
+			const files = this.app.vault.getMarkdownFiles();
+			const filesLength = files.length;
+			for (let i = 0; i < filesLength; i++) {
+				fileCheck(files[i], undefined, 'cmd');
+			}
+			new Notice(`All ${filesLength} notes have been moved.`);
 		};
 
 		this.addCommand({
@@ -110,6 +117,14 @@ export default class AutoNoteMover extends Plugin {
 					}
 					return true;
 				}
+			},
+		});
+
+		this.addCommand({
+			id: 'Move-all-notes',
+			name: 'Move all notes',
+			callback: () => {
+				moveAllNotesCommand();
 			},
 		});
 

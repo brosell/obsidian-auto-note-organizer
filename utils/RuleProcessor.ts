@@ -17,7 +17,7 @@ export class RuleProcessor {
     for (const rule of this.rules) {
       if (this.ruleMatches(rule, fileMetadata)) {
         const path = this.processPathSpec(rule.pathSpec, fileMetadata.frontmatter);
-        if (path !== false) {
+        if (path) {
           return path;
         }
       }
