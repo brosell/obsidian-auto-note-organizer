@@ -49,30 +49,13 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 	}
 
 	add_auto_note_mover_setting(): void {
-		this.containerEl.createEl('h2', { text: 'Auto Note Mover' });
+		this.containerEl.createEl('h2', { text: 'Auto Note Organizer' });
 
 		const descEl = document.createDocumentFragment();
 
 		new Setting(this.containerEl).setDesc(
-			'Auto Note Mover will automatically move the active notes to their respective folders according to the rules.'
+			'Auto Note Organizer will automatically move the active notes to their respective folders according to the rules.'
 		);
-
-		/* new Setting(this.containerEl)
-			.setName('Auto Note Mover')
-			.setDesc('Enable or disable the Auto Note Mover.')
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.enable_auto_note_mover)
-					.onChange(async (use_new_auto_note_mover) => {
-						this.plugin.settings.enable_auto_note_mover = use_new_auto_note_mover;
-						await this.plugin.saveSettings();
-						this.display();
-					});
-			});
-
-		if (!this.plugin.settings.enable_auto_note_mover) {
-			return;
-		} */
 
 		const triggerDesc = document.createDocumentFragment();
 		triggerDesc.append(
@@ -103,45 +86,39 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 					})
 			);
 
-		const useRegexToCheckForTags = document.createDocumentFragment();
-		useRegexToCheckForTags.append(
-			'If enabled, tags will be checked with regular expressions.',
-			descEl.createEl('br'),
-			'For example, if you want to match the #tag, you would write ',
-			descEl.createEl('strong', { text: '^#tag$' }),
-			descEl.createEl('br'),
-			'This setting is for a specific purpose, such as specifying nested tags in bulk.',
-			descEl.createEl('br'),
-			descEl.createEl('strong', {
-				text: 'If you want to use the suggested tags as they are, it is recommended to disable this setting.',
-			})
-		);
-		new Setting(this.containerEl)
-			.setName('Use regular expressions to check for tags')
-			.setDesc(useRegexToCheckForTags)
-			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.use_regex_to_check_for_tags).onChange(async (value) => {
-					this.plugin.settings.use_regex_to_check_for_tags = value;
-					await this.plugin.saveSettings();
-					this.display();
-				});
-			});
+		// const useRegexToCheckForTags = document.createDocumentFragment();
+		// useRegexToCheckForTags.append(
+		// 	'If enabled, tags will be checked with regular expressions.',
+		// 	descEl.createEl('br'),
+		// 	'For example, if you want to match the #tag, you would write ',
+		// 	descEl.createEl('strong', { text: '^#tag$' }),
+		// 	descEl.createEl('br'),
+		// 	'This setting is for a specific purpose, such as specifying nested tags in bulk.',
+		// 	descEl.createEl('br'),
+		// 	descEl.createEl('strong', {
+		// 		text: 'If you want to use the suggested tags as they are, it is recommended to disable this setting.',
+		// 	})
+		// );
+		// new Setting(this.containerEl)
+		// 	.setName('Use regular expressions to check for tags')
+		// 	.setDesc(useRegexToCheckForTags)
+		// 	.addToggle((toggle) => {
+		// 		toggle.setValue(this.plugin.settings.use_regex_to_check_for_tags).onChange(async (value) => {
+		// 			this.plugin.settings.use_regex_to_check_for_tags = value;
+		// 			await this.plugin.saveSettings();
+		// 			this.display();
+		// 		});
+		// 	});
 
 		const ruleDesc = document.createDocumentFragment();
 		ruleDesc.append(
 			'1. Set the destination folder.',
 			descEl.createEl('br'),
-			'2. Set a tag or title that matches the note you want to move. ',
-			descEl.createEl('strong', { text: 'You can set either the tag or the title. ' }),
+			'2. Create an expression that matches the note you want to move. ',
+			descEl.createEl('strong', { text: 'use and(&) or(|) not(!) and parens(()). use [] for values. `example: tag[nohash]&project[myproj]' }),
 			descEl.createEl('br'),
 			'3. The rules are checked in order from the top. The notes will be moved to the folder with the ',
 			descEl.createEl('strong', { text: 'first matching rule.' }),
-			descEl.createEl('br'),
-			'Tag: Be sure to add a',
-			descEl.createEl('strong', { text: ' # ' }),
-			'at the beginning.',
-			descEl.createEl('br'),
-			'Title: Tested by JavaScript regular expressions.',
 			descEl.createEl('br'),
 			descEl.createEl('br'),
 			'Notice:',
