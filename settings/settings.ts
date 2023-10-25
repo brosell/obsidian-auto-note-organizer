@@ -1,8 +1,7 @@
 import AutoNoteMover from 'main';
-import { App, Notice, PluginSettingTab, Setting, ButtonComponent } from 'obsidian';
+import { App, PluginSettingTab, Setting, ButtonComponent } from 'obsidian';
 
 import { FolderSuggest } from 'suggests/file-suggest';
-import { TagSuggest } from 'suggests/tag-suggest';
 import { arrayMove } from 'utils/Utils';
 
 export interface FolderTagPattern {
@@ -22,6 +21,7 @@ export interface AutoNoteMoverSettings {
 	folder_tag_pattern: Array<FolderTagPattern>;
 	use_regex_to_check_for_excluded_folder: boolean;
 	excluded_folder: Array<ExcludedFolder>;
+	create_non_existent_folders: boolean;
 }
 
 export const DEFAULT_SETTINGS: AutoNoteMoverSettings = {
@@ -31,6 +31,7 @@ export const DEFAULT_SETTINGS: AutoNoteMoverSettings = {
 	folder_tag_pattern: [{ folder: '', tag: '', pattern: '' }],
 	use_regex_to_check_for_excluded_folder: false,
 	excluded_folder: [{ folder: '' }],
+	create_non_existent_folders: false,
 };
 
 export class AutoNoteMoverSettingTab extends PluginSettingTab {
@@ -50,30 +51,13 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 	}
 
 	add_auto_note_mover_setting(): void {
-		this.containerEl.createEl('h2', { text: 'Auto Note Mover' });
+		this.containerEl.createEl('h2', { text: 'Auto Note Organizer' });
 
 		const descEl = document.createDocumentFragment();
 
 		new Setting(this.containerEl).setDesc(
-			'Auto Note Mover will automatically move the active notes to their respective folders according to the rules.'
+			'Auto Note Organizer will automatically move the active notes to their respective folders according to the rules.'
 		);
-
-		/* new Setting(this.containerEl)
-			.setName('Auto Note Mover')
-			.setDesc('Enable or disable the Auto Note Mover.')
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.enable_auto_note_mover)
-					.onChange(async (use_new_auto_note_mover) => {
-						this.plugin.settings.enable_auto_note_mover = use_new_auto_note_mover;
-						await this.plugin.saveSettings();
-						this.display();
-					});
-			});
-
-		if (!this.plugin.settings.enable_auto_note_mover) {
-			return;
-		} */
 
 		const triggerDesc = document.createDocumentFragment();
 		triggerDesc.append(
@@ -104,45 +88,39 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 					})
 			);
 
-		const useRegexToCheckForTags = document.createDocumentFragment();
-		useRegexToCheckForTags.append(
-			'If enabled, tags will be checked with regular expressions.',
-			descEl.createEl('br'),
-			'For example, if you want to match the #tag, you would write ',
-			descEl.createEl('strong', { text: '^#tag$' }),
-			descEl.createEl('br'),
-			'This setting is for a specific purpose, such as specifying nested tags in bulk.',
-			descEl.createEl('br'),
-			descEl.createEl('strong', {
-				text: 'If you want to use the suggested tags as they are, it is recommended to disable this setting.',
-			})
-		);
-		new Setting(this.containerEl)
-			.setName('Use regular expressions to check for tags')
-			.setDesc(useRegexToCheckForTags)
-			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.use_regex_to_check_for_tags).onChange(async (value) => {
-					this.plugin.settings.use_regex_to_check_for_tags = value;
-					await this.plugin.saveSettings();
-					this.display();
-				});
-			});
+		// const useRegexToCheckForTags = document.createDocumentFragment();
+		// useRegexToCheckForTags.append(
+		// 	'If enabled, tags will be checked with regular expressions.',
+		// 	descEl.createEl('br'),
+		// 	'For example, if you want to match the #tag, you would write ',
+		// 	descEl.createEl('strong', { text: '^#tag$' }),
+		// 	descEl.createEl('br'),
+		// 	'This setting is for a specific purpose, such as specifying nested tags in bulk.',
+		// 	descEl.createEl('br'),
+		// 	descEl.createEl('strong', {
+		// 		text: 'If you want to use the suggested tags as they are, it is recommended to disable this setting.',
+		// 	})
+		// );
+		// new Setting(this.containerEl)
+		// 	.setName('Use regular expressions to check for tags')
+		// 	.setDesc(useRegexToCheckForTags)
+		// 	.addToggle((toggle) => {
+		// 		toggle.setValue(this.plugin.settings.use_regex_to_check_for_tags).onChange(async (value) => {
+		// 			this.plugin.settings.use_regex_to_check_for_tags = value;
+		// 			await this.plugin.saveSettings();
+		// 			this.display();
+		// 		});
+		// 	});
 
 		const ruleDesc = document.createDocumentFragment();
 		ruleDesc.append(
 			'1. Set the destination folder.',
 			descEl.createEl('br'),
-			'2. Set a tag or title that matches the note you want to move. ',
-			descEl.createEl('strong', { text: 'You can set either the tag or the title. ' }),
+			'2. Create an expression that matches the note you want to move. ',
+			descEl.createEl('strong', { text: 'use and(&) or(|) not(!) and parens(()). use [] for values. `example: tag[nohash]&project[myproj]' }),
 			descEl.createEl('br'),
 			'3. The rules are checked in order from the top. The notes will be moved to the folder with the ',
 			descEl.createEl('strong', { text: 'first matching rule.' }),
-			descEl.createEl('br'),
-			'Tag: Be sure to add a',
-			descEl.createEl('strong', { text: ' # ' }),
-			'at the beginning.',
-			descEl.createEl('br'),
-			'Title: Tested by JavaScript regular expressions.',
 			descEl.createEl('br'),
 			descEl.createEl('br'),
 			'Notice:',
@@ -174,12 +152,6 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 			});
 
 		this.plugin.settings.folder_tag_pattern.forEach((folder_tag_pattern, index) => {
-			const settings = this.plugin.settings.folder_tag_pattern;
-			const settingTag = settings.map((e) => e['tag']);
-			const settingPattern = settings.map((e) => e['pattern']);
-			const checkArr = (arr: string[], val: string) => {
-				return arr.some((arrVal) => val === arrVal);
-			};
 
 			const s = new Setting(this.containerEl)
 				.addSearch((cb) => {
@@ -192,46 +164,17 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 						});
 				})
 
-				.addSearch((cb) => {
-					new TagSuggest(this.app, cb.inputEl);
-					cb.setPlaceholder('Tag')
+				.addText((cb) => {
+					// new TagSuggest(this.app, cb.inputEl);
+					
+					cb.setPlaceholder('Condition')
 						.setValue(folder_tag_pattern.tag)
 						.onChange(async (newTag) => {
-							if (this.plugin.settings.folder_tag_pattern[index].pattern) {
-								this.display();
-								return new Notice(`You can set either the tag or the title.`);
-							}
-							if (newTag && checkArr(settingTag, newTag)) {
-								new Notice('This tag is already used.');
-								return;
-							}
-							if (!this.plugin.settings.use_regex_to_check_for_tags) {
-								this.plugin.settings.folder_tag_pattern[index].tag = newTag.trim();
-							} else if (this.plugin.settings.use_regex_to_check_for_tags) {
-								this.plugin.settings.folder_tag_pattern[index].tag = newTag;
-							}
+							this.plugin.settings.folder_tag_pattern[index].tag = newTag.trim();
 							await this.plugin.saveSettings();
 						});
 				})
 
-				.addSearch((cb) => {
-					cb.setPlaceholder('Title by regex')
-						.setValue(folder_tag_pattern.pattern)
-						.onChange(async (newPattern) => {
-							if (this.plugin.settings.folder_tag_pattern[index].tag) {
-								this.display();
-								return new Notice(`You can set either the tag or the title.`);
-							}
-
-							if (newPattern && checkArr(settingPattern, newPattern)) {
-								new Notice('This pattern is already used.');
-								return;
-							}
-
-							this.plugin.settings.folder_tag_pattern[index].pattern = newPattern;
-							await this.plugin.saveSettings();
-						});
-				})
 				.addExtraButton((cb) => {
 					cb.setIcon('up-chevron-glyph')
 						.setTooltip('Move up')
@@ -260,6 +203,17 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 						});
 				});
 			s.infoEl.remove();
+		});
+
+		new Setting(this.containerEl)
+		.setName('Create Folders if they don\'t exist')
+		.setDesc('This can be especially useful when using capture groups in the destination folder.')
+		.addToggle((toggle) => {
+			toggle.setValue(this.plugin.settings.create_non_existent_folders).onChange(async (value) => {
+				this.plugin.settings.create_non_existent_folders = value;
+				await this.plugin.saveSettings();
+				this.display();
+			});
 		});
 
 		const useRegexToCheckForExcludedFolder = document.createDocumentFragment();

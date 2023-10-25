@@ -1,7 +1,9 @@
+import { parse } from 'logical-expression-parser';
+
 export interface Rule {
   pathSpec: string;
   tagMatch?: string; // todo: settings.use_regex_to_check_for_tags
-  titleMatchRegex?: RegExp;
+  // titleMatchRegex?: RegExp;
 }
 
 export interface FileMetadata {
@@ -13,7 +15,7 @@ export interface FileMetadata {
 export class RuleProcessor {
   constructor(private rules: Rule[]) {}
 
-  processFileMetadata(fileMetadata: FileMetadata): string | false {
+  getDestinationPath(fileMetadata: FileMetadata): string | false {
     for (const rule of this.rules) {
       if (this.ruleMatches(rule, fileMetadata)) {
         const path = this.processPathSpec(rule.pathSpec, fileMetadata.frontmatter);
@@ -24,20 +26,64 @@ export class RuleProcessor {
     }
     return false;
   }
+  
+  private parseTest(input: string): { parameter: string, value: string } {
+    const regex = /^(\w+)\[(\w+)\]$/; // something[else]
+    const match = input.match(regex);
+    if (match) {
+        return { parameter: match[1], value: match[2] };
+    }
+    // error
+    return { parameter: '!!!', value: 'nfg' };
+  }
+
+  private expressionEvaluator(condition: string, fileMetadata: FileMetadata): boolean {
+    const { parameter, value } = this.parseTest(condition);
+    let answer = false;
+    switch(parameter) {
+      case '!!!':
+        break;
+      case 'has':
+        answer = this.hasFrontmatterTest(value, fileMetadata);
+        break;
+      case 'tag':
+        answer = this.tagTest(`#${value}`, fileMetadata);
+        break;
+      case 'title':
+        answer = this.titleTest(value, fileMetadata);
+        break;
+      default:
+        answer = this.frontmatterTest(parameter, value, fileMetadata);
+        break;
+    }
+    // console.log('condition', condition, answer);
+    return answer;
+  }
+
+  private tagTest = (tag: string, fileMetadata: FileMetadata) => fileMetadata.tags.includes(tag);
+  private titleTest = (title: string, fileMetadata: FileMetadata) => new RegExp(title).test(fileMetadata.title);
+  private hasFrontmatterTest = ( property: string, fileMetadata: FileMetadata) => {
+    const propVal = fileMetadata.frontmatter[property];
+    return !!(Array.isArray(propVal) ? propVal[0] : propVal);
+  }
+  private frontmatterTest = ( property: string, value: string, fileMetadata: FileMetadata) => {
+    const propVal = fileMetadata.frontmatter[property];
+    return value === (Array.isArray(propVal) ? propVal[0] : propVal);
+  }
 
   private ruleMatches(rule: Rule, fileMetadata: FileMetadata): boolean {
-    if (!rule.tagMatch && !rule.titleMatchRegex) {
+    if (!rule.tagMatch) {
+      // match everything
       return true;
     }
-    if (rule.tagMatch && rule.titleMatchRegex) {
-      return fileMetadata.tags.includes(rule.tagMatch) && rule.titleMatchRegex.test(fileMetadata.title);
-    }
+
     if (rule.tagMatch) {
-      return fileMetadata.tags.includes(rule.tagMatch);
+      if (rule.tagMatch.startsWith('=')) {
+        rule.tagMatch = rule.tagMatch.substring(1);
+      }
+      return parse(rule.tagMatch, (cond: string) => this.expressionEvaluator(cond, fileMetadata));
     }
-    if (rule.titleMatchRegex) {
-      return rule.titleMatchRegex.test(fileMetadata.title);
-    }
+    
     return false;
   }
 
