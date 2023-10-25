@@ -47,9 +47,8 @@ export default class AutoNoteMover extends Plugin {
 			}
 
 			// transform pattern settings to Rules
-			const rules: Rule[] = folderTagPattern.map( ftp => ({
+			const rules: Rule[] = folderTagPattern.map(ftp => ({
 				tagMatch: ftp.tag,
-				titleMatchRegex: ftp.pattern?new RegExp(ftp.pattern):undefined,
 				pathSpec: ftp.folder
 			}));
 			

@@ -3,7 +3,7 @@ import { parse } from 'logical-expression-parser';
 export interface Rule {
   pathSpec: string;
   tagMatch?: string; // todo: settings.use_regex_to_check_for_tags
-  titleMatchRegex?: RegExp;
+  // titleMatchRegex?: RegExp;
 }
 
 export interface FileMetadata {
@@ -28,11 +28,12 @@ export class RuleProcessor {
   }
   
   private parseTest(input: string): { parameter: string, value: string } {
-    const regex = /^(\w+)\[(\w+)\]$/;
+    const regex = /^(\w+)\[(\w+)\]$/; // something[else]
     const match = input.match(regex);
     if (match) {
         return { parameter: match[1], value: match[2] };
     }
+    // error
     return { parameter: '!!!', value: 'nfg' };
   }
 
@@ -71,22 +72,18 @@ export class RuleProcessor {
   }
 
   private ruleMatches(rule: Rule, fileMetadata: FileMetadata): boolean {
-    if (!rule.tagMatch && !rule.titleMatchRegex) {
+    if (!rule.tagMatch) {
+      // match everything
       return true;
     }
 
-    if (rule.tagMatch && rule.titleMatchRegex) {
-      return fileMetadata.tags.includes(rule.tagMatch) && rule.titleMatchRegex.test(fileMetadata.title);
-    }
     if (rule.tagMatch) {
       if (rule.tagMatch.startsWith('=')) {
-        return parse(rule.tagMatch.substring(1), (cond: string) => this.expressionEvaluator(cond, fileMetadata));
+        rule.tagMatch = rule.tagMatch.substring(1);
       }
-      return fileMetadata.tags.includes(rule.tagMatch);
+      return parse(rule.tagMatch, (cond: string) => this.expressionEvaluator(cond, fileMetadata));
     }
-    if (rule.titleMatchRegex) {
-      return rule.titleMatchRegex.test(fileMetadata.title);
-    }
+    
     return false;
   }
 
