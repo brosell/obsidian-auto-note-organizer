@@ -1,8 +1,7 @@
 import AutoNoteMover from 'main';
-import { App, Notice, PluginSettingTab, Setting, ButtonComponent } from 'obsidian';
+import { App, PluginSettingTab, Setting, ButtonComponent } from 'obsidian';
 
 import { FolderSuggest } from 'suggests/file-suggest';
-import { TagSuggest } from 'suggests/tag-suggest';
 import { arrayMove } from 'utils/Utils';
 
 export interface FolderTagPattern {
@@ -174,12 +173,6 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 			});
 
 		this.plugin.settings.folder_tag_pattern.forEach((folder_tag_pattern, index) => {
-			const settings = this.plugin.settings.folder_tag_pattern;
-			const settingTag = settings.map((e) => e['tag']);
-			const settingPattern = settings.map((e) => e['pattern']);
-			const checkArr = (arr: string[], val: string) => {
-				return arr.some((arrVal) => val === arrVal);
-			};
 
 			const s = new Setting(this.containerEl)
 				.addSearch((cb) => {
@@ -192,46 +185,17 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 						});
 				})
 
-				.addSearch((cb) => {
-					new TagSuggest(this.app, cb.inputEl);
-					cb.setPlaceholder('Tag')
+				.addText((cb) => {
+					// new TagSuggest(this.app, cb.inputEl);
+					
+					cb.setPlaceholder('Condition')
 						.setValue(folder_tag_pattern.tag)
 						.onChange(async (newTag) => {
-							if (this.plugin.settings.folder_tag_pattern[index].pattern) {
-								this.display();
-								return new Notice(`You can set either the tag or the title.`);
-							}
-							if (newTag && checkArr(settingTag, newTag)) {
-								new Notice('This tag is already used.');
-								return;
-							}
-							if (!this.plugin.settings.use_regex_to_check_for_tags) {
-								this.plugin.settings.folder_tag_pattern[index].tag = newTag.trim();
-							} else if (this.plugin.settings.use_regex_to_check_for_tags) {
-								this.plugin.settings.folder_tag_pattern[index].tag = newTag;
-							}
+							this.plugin.settings.folder_tag_pattern[index].tag = newTag.trim();
 							await this.plugin.saveSettings();
 						});
 				})
 
-				.addSearch((cb) => {
-					cb.setPlaceholder('Title by regex')
-						.setValue(folder_tag_pattern.pattern)
-						.onChange(async (newPattern) => {
-							if (this.plugin.settings.folder_tag_pattern[index].tag) {
-								this.display();
-								return new Notice(`You can set either the tag or the title.`);
-							}
-
-							if (newPattern && checkArr(settingPattern, newPattern)) {
-								new Notice('This pattern is already used.');
-								return;
-							}
-
-							this.plugin.settings.folder_tag_pattern[index].pattern = newPattern;
-							await this.plugin.saveSettings();
-						});
-				})
 				.addExtraButton((cb) => {
 					cb.setIcon('up-chevron-glyph')
 						.setTooltip('Move up')
