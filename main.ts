@@ -1,4 +1,4 @@
-import { MarkdownView, Plugin, TFile, getAllTags, Notice, TAbstractFile, normalizePath } from 'obsidian';
+import { MarkdownView, Plugin, TFile, getAllTags, Notice, TAbstractFile, normalizePath, debounce } from 'obsidian';
 import { DEFAULT_SETTINGS, AutoNoteMoverSettings, AutoNoteMoverSettingTab } from 'settings/settings';
 import { fileMove, getTriggerIndicator, isFmDisable } from 'utils/Utils';
 import { RuleProcessor, Rule, FileMetadata } from 'utils/RuleProcessor'
@@ -66,7 +66,7 @@ export default class AutoNoteMover extends Plugin {
 			const movePath = rp.getDestinationPath(fileMetadata);
 			if (movePath) {
 				console.log('movePath', movePath);
-				fileMove(this.app, movePath, fileFullName, file);
+				fileMove(this, movePath, fileFullName, file);
 			}
 		};
 
@@ -84,9 +84,9 @@ export default class AutoNoteMover extends Plugin {
 		}
 
 		this.app.workspace.onLayoutReady(() => {
-			this.registerEvent(this.app.vault.on('create', (file) => { console.log('new note'); fileCheck(file); }));
-			this.registerEvent(this.app.metadataCache.on('changed', (file) => fileCheck(file)));
-			this.registerEvent(this.app.vault.on('rename', (file, oldPath) => fileCheck(file, oldPath)));
+			this.registerEvent(this.app.vault.on('create', (file) => debounce(fileCheck, 200, true)(file)));
+			this.registerEvent(this.app.metadataCache.on('changed', (file) => debounce(fileCheck, 200, true)(file)));
+			this.registerEvent(this.app.vault.on('rename', (file, oldPath) => debounce(fileCheck, 200, true)(file, oldPath)));
 		});
 
 		const moveNoteCommand = (view: MarkdownView) => {

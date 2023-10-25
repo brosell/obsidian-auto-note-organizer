@@ -21,6 +21,7 @@ export interface AutoNoteMoverSettings {
 	folder_tag_pattern: Array<FolderTagPattern>;
 	use_regex_to_check_for_excluded_folder: boolean;
 	excluded_folder: Array<ExcludedFolder>;
+	create_non_existent_folders: boolean;
 }
 
 export const DEFAULT_SETTINGS: AutoNoteMoverSettings = {
@@ -30,6 +31,7 @@ export const DEFAULT_SETTINGS: AutoNoteMoverSettings = {
 	folder_tag_pattern: [{ folder: '', tag: '', pattern: '' }],
 	use_regex_to_check_for_excluded_folder: false,
 	excluded_folder: [{ folder: '' }],
+	create_non_existent_folders: false,
 };
 
 export class AutoNoteMoverSettingTab extends PluginSettingTab {
@@ -201,6 +203,17 @@ export class AutoNoteMoverSettingTab extends PluginSettingTab {
 						});
 				});
 			s.infoEl.remove();
+		});
+
+		new Setting(this.containerEl)
+		.setName('Create Folders if they don\'t exist')
+		.setDesc('This can be especially useful when using capture groups in the destination folder.')
+		.addToggle((toggle) => {
+			toggle.setValue(this.plugin.settings.create_non_existent_folders).onChange(async (value) => {
+				this.plugin.settings.create_non_existent_folders = value;
+				await this.plugin.saveSettings();
+				this.display();
+			});
 		});
 
 		const useRegexToCheckForExcludedFolder = document.createDocumentFragment();
