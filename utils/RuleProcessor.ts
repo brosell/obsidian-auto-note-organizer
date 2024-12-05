@@ -28,7 +28,7 @@ export class RuleProcessor {
   }
   
   private parseTest(input: string): { parameter: string, value: string } {
-    const regex = /^(\w+)\[(\w+)\]$/; // something[else]
+    const regex = /^(\w+)\[(.+)\]$/; // attribute[value]
     const match = input.match(regex);
     if (match) {
         return { parameter: match[1], value: match[2] };
